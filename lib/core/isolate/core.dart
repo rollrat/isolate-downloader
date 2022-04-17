@@ -7,7 +7,6 @@ enum SendPortType {
   cancel,
   terminate,
   tasksize,
-  test,
 }
 
 class SendPortData {
@@ -278,7 +277,7 @@ void _appendTask(IsolateDownloaderTask task) {
 
 void _initIsolateDownloader(IsolateDownloaderOption option) {
   _dqueue = Queue<IsolateDownloaderTask>();
-  _workingMap = Map<int, IsolateDownloaderTask>();
+  _workingMap = <int, IsolateDownloaderTask>{};
   _maxTaskCount = option.jobCount;
 }
 
@@ -289,7 +288,9 @@ void _cancelTask(int taskId) {
 /// cancel all tasks and remove dqueue
 void _terminate() {
   _dqueue.clear();
-  _workingMap.entries.forEach((element) => element.value.cancelToken?.cancel());
+  for (var element in _workingMap.entries) {
+    element.value.cancelToken?.cancel();
+  }
 }
 
 void _modifyTaskPoolSize(int sz) {
@@ -318,9 +319,6 @@ void _downloadIsolateRoutine(SendPort sendPort) {
           break;
         case SendPortType.tasksize:
           _modifyTaskPoolSize(message.data as int);
-          break;
-        case SendPortType.test:
-          var ttask = message.data as List<String>;
           break;
       }
     }
