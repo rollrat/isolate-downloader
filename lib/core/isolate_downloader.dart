@@ -40,7 +40,7 @@ class DownloadTaskStatus {
 
 class IsolateDownloader {
   final ReceivePort _receivePort = ReceivePort();
-  late SendPort _sendPort;
+  SendPort? _sendPort;
   late Isolate _isolate;
   late Map<int, DownloadTask> _tasks;
   late int _taskTotalCount;
@@ -50,21 +50,21 @@ class IsolateDownloader {
   late HashSet<int> _completedTask;
   late HashSet<int> _erroredTask;
   late HashSet<int> _canceledTask;
-  late int _threadCount;
+  late int _jobCount;
   late Map<int, IsolateDownloaderErrorUnit> _errorContent;
 
-  static late IsolateDownloader _instance;
-  static Future<IsolateDownloader> getInstance() async {
+  static IsolateDownloader? _instance;
+  static Future<IsolateDownloader> getInstance({int jobCount = 4}) async {
     if (_instance == null) {
       _instance = IsolateDownloader();
-      await _instance.init();
+      await _instance!.init(jobCount);
     }
 
-    return _instance;
+    return _instance!;
   }
 
-  Future<void> init({int threadCount = 4}) async {
-    _threadCount = threadCount;
+  Future<void> init(int jobCount) async {
+    _jobCount = jobCount;
     _receivePort.listen((dynamic message) => _listen(message));
     _isolate =
         await Isolate.spawn(_downloadIsolateRoutine, _receivePort.sendPort);
@@ -84,11 +84,11 @@ class IsolateDownloader {
   Future<void> _listen(dynamic message) async {
     if (message is SendPort) {
       _sendPort = message;
-      _sendPort.send(
+      _sendPort!.send(
         SendPortData(
           type: SendPortType.init,
           data: IsolateDownloaderOption(
-            threadCount: _threadCount,
+            jobCount: _jobCount,
             maxRetryCount: 10,
           ),
         ),
@@ -115,27 +115,26 @@ class IsolateDownloader {
     }
   }
 
-  void changeThreadCount(int threadCount) {
-    _threadCount = threadCount;
-    _sendPort
-        .send(SendPortData(type: SendPortType.tasksize, data: threadCount));
+  void changejobCount(int jobCount) {
+    _jobCount = jobCount;
+    _sendPort?.send(SendPortData(type: SendPortType.tasksize, data: jobCount));
   }
 
   void cancel(int taskId) {
-    _sendPort.send(SendPortData(type: SendPortType.cancel, data: taskId));
+    _sendPort?.send(SendPortData(type: SendPortType.cancel, data: taskId));
     _canceledTask.add(taskId);
     _tasks.remove(taskId);
   }
 
   void close() {
-    _sendPort.send(const SendPortData(type: SendPortType.terminate));
+    _sendPort?.send(const SendPortData(type: SendPortType.terminate));
     _isolate.kill(priority: Isolate.immediate);
   }
 
   void appendTask(DownloadTask task) {
     task.taskId = _taskTotalCount++;
     _tasks[task.taskId] = task;
-    _sendPort.send(
+    _sendPort?.send(
       SendPortData(
         type: SendPortType.append,
         data: IsolateDownloaderTask.fromDownloadTask(task.taskId, task),
@@ -186,17 +185,23 @@ class IsolateDownloader {
   void _progressTask(IsolateDownloaderProgressProtocolUnit unit) {
     if (!_tasks[unit.id]!.isSizeEnsued) {
       _tasks[unit.id]!.isSizeEnsued = true;
-      _tasks[unit.id]?.sizeCallback(unit.totalSize.toDouble());
+      if (_tasks[unit.id]?.sizeCallback != null) {
+        _tasks[unit.id]?.sizeCallback!(unit.totalSize.toDouble());
+      }
     }
-    _tasks[unit.id]?.downloadCallback(
-        (unit.countSize - _tasks[unit.id]!.accDownloadSize).toDouble());
+    if (_tasks[unit.id]?.downloadCallback != null) {
+      _tasks[unit.id]?.downloadCallback!(
+          (unit.countSize - _tasks[unit.id]!.accDownloadSize).toDouble());
+    }
     _taskTotalSizes[unit.id] = unit.totalSize;
     _taskCountSizes[unit.id] = unit.countSize;
     _tasks[unit.id]!.accDownloadSize = unit.countSize;
   }
 
   void _completeTask(int taskId) {
-    _tasks[taskId]?.completeCallback();
+    if (_tasks[taskId]?.completeCallback != null) {
+      _tasks[taskId]?.completeCallback!();
+    }
     _taskCountSizes.remove(taskId);
     _taskTotalSizes.remove(taskId);
     _completedTask.add(taskId);
@@ -204,7 +209,9 @@ class IsolateDownloader {
   }
 
   Future<void> _errorTask(IsolateDownloaderErrorUnit unit) async {
-    _tasks[unit.id]?.errorCallback(unit.error);
+    if (_tasks[unit.id]?.errorCallback != null) {
+      _tasks[unit.id]?.errorCallback!(unit.error);
+    }
     _erroredTask.add(unit.id);
     _errorContent[unit.id] = unit;
     _tasks.remove(unit.id);
@@ -216,6 +223,8 @@ class IsolateDownloader {
     var count = data["count"] as int;
     var code = data["code"] as int;
 
-    _tasks[id]?.retryCallback(count, code);
+    if (_tasks[id]?.retryCallback != null) {
+      _tasks[id]?.retryCallback!(count, code);
+    }
   }
 }

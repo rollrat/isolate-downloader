@@ -1,5 +1,4 @@
-import 'dart:ui';
-
+typedef VoidCallback = void Function();
 typedef VoidStringCallback = void Function(String);
 typedef DoubleIntCallback = Future Function(int, int);
 typedef DoubleCallback = void Function(double);
@@ -16,12 +15,12 @@ class DownloadTask {
   final dynamic data;
 
   // This callback used in downloader
-  late DoubleCallback sizeCallback;
-  late DoubleCallback downloadCallback;
-  late VoidStringCallback errorCallback;
-  late VoidCallback startCallback;
-  late VoidCallback completeCallback;
-  late RetryCallbackType retryCallback;
+  DoubleCallback? sizeCallback;
+  DoubleCallback? downloadCallback;
+  VoidStringCallback? errorCallback;
+  VoidCallback? startCallback;
+  VoidCallback? completeCallback;
+  RetryCallbackType? retryCallback;
 
   // These used in isolate downloader
   int accDownloadSize = 0;
@@ -45,14 +44,14 @@ class DownloadTask {
     required int taskId,
     required String url,
     required String downloadPath,
-    required Map<String, String> headers,
+    Map<String, String>? headers,
     dynamic data,
   }) {
     return DownloadTask(
       taskId: taskId,
       url: url,
       downloadPath: downloadPath,
-      headers: headers,
+      headers: headers ?? <String, String>{},
       data: data,
     );
   }

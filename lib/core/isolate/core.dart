@@ -96,11 +96,11 @@ class IsolateDownloaderTask {
 }
 
 class IsolateDownloaderOption {
-  final int threadCount;
+  final int jobCount;
   final int maxRetryCount;
 
   IsolateDownloaderOption({
-    required this.threadCount,
+    required this.jobCount,
     required this.maxRetryCount,
   });
 }
@@ -279,7 +279,7 @@ void _appendTask(IsolateDownloaderTask task) {
 void _initIsolateDownloader(IsolateDownloaderOption option) {
   _dqueue = Queue<IsolateDownloaderTask>();
   _workingMap = Map<int, IsolateDownloaderTask>();
-  _maxTaskCount = option.threadCount;
+  _maxTaskCount = option.jobCount;
 }
 
 void _cancelTask(int taskId) {
