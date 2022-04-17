@@ -59,3 +59,18 @@ while (!isComplete) {
   await Future.delayed(const Duration(milliseconds: 100));
 }
 ```
+
+You can also implement like `polling` rather than `callback`.
+The implementation of `polling` eliminates the dependency of `the downloader` by `the UI`.
+
+```dart
+while (!isComplete) {
+  //
+  //  get task status by taskid
+  //
+  print(downloader.getStatus(0).state);
+  print(downloader.getStatus(0).totalSize);
+  print(downloader.getStatus(0).countSize);
+  await Future.delayed(const Duration(milliseconds: 100));
+}
+```
