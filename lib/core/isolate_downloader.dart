@@ -219,7 +219,6 @@ class IsolateDownloader {
 
   Future<void> _retryTask(Map<dynamic, dynamic> data) async {
     var id = data["id"] as int;
-    var url = data["url"] as String;
     var count = data["count"] as int;
     var code = data["code"] as int;
 
