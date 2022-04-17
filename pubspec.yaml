@@ -1,6 +1,6 @@
 name: isolate_downloader
 description: Multiple File Downloader
-version: 1.0.3
+version: 1.0.4
 homepage: https://github.com/rollrat/isolate-downloader
 
 environment:
