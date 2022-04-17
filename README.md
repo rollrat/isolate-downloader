@@ -1,8 +1,8 @@
 # isolate downloader
 
-Download multiple files at the same time.
+[![pub package](https://img.shields.io/pub/v/isolate_downloader.svg)](https://pub.dev/packages/isolate_downloader)
 
-https://github.com/rollrat/isolate-downloader
+Download multiple files at the same time.
 
 ## Getting started
 
