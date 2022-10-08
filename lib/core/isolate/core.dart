@@ -130,7 +130,8 @@ class IsolateDownloaderErrorUnit {
 
 int _taskCurrentCount = 0;
 int _maxTaskCount = 0;
-int _maxRetryCount = 0;
+const int _maxRetryCount = 10;
+const int _retryDelay = 100;
 late SendPort _sendPort;
 late Queue<IsolateDownloaderTask> _dqueue;
 late Map<int, IsolateDownloaderTask> _workingMap;
@@ -140,6 +141,7 @@ Future<void> _processTask(IsolateDownloaderTask task) async {
 
   var options = BaseOptions(
     contentType: Headers.formUrlEncodedContentType,
+    validateStatus: (status) => true,
   );
   var dio = Dio(options);
 
@@ -227,6 +229,8 @@ Future<void> _processTask(IsolateDownloaderTask task) async {
       );
 
       retryCount++;
+      
+      await Future.delayed(const Duration(milliseconds: _retryDelay));
     } while (retryCount < _maxRetryCount);
 
     if (tooManyRetry) {
